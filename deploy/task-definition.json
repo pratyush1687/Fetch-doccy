@@ -1,0 +1,79 @@
+{
+  "family": "document-search",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "REPLACE_WITH_TASK_EXECUTION_ROLE_ARN",
+  "taskRoleArn": "REPLACE_WITH_TASK_ROLE_ARN",
+  "containerDefinitions": [
+    {
+      "name": "document-search",
+      "image": "REPLACE_WITH_ECR_IMAGE_URI",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "3000"
+        },
+        {
+          "name": "OPENSEARCH_NODE",
+          "value": "REPLACE_WITH_OPENSEARCH_ENDPOINT"
+        },
+        {
+          "name": "OPENSEARCH_INDEX",
+          "value": "documents"
+        },
+        {
+          "name": "OPENSEARCH_USERNAME",
+          "value": "REPLACE_WITH_OPENSEARCH_USERNAME"
+        },
+        {
+          "name": "OPENSEARCH_PASSWORD",
+          "value": "REPLACE_WITH_OPENSEARCH_PASSWORD"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "REPLACE_WITH_REDIS_ENDPOINT"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "info"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "REPLACE_WITH_LOG_GROUP_NAME",
+          "awslogs-region": "REPLACE_WITH_AWS_REGION",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}
+

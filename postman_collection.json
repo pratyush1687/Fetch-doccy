@@ -1,0 +1,456 @@
+{
+	"info": {
+		"_postman_id": "deeprunner-api-collection",
+		"name": "DeepRunner Document Search API",
+		"description": "Postman collection for testing the DeepRunner Document Search API. This collection includes all endpoints for document management and search functionality.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check the health status of the service and its dependencies (OpenSearch and Redis)."
+					},
+					"response": []
+				}
+			],
+			"description": "Health check endpoints"
+		},
+		{
+			"name": "Documents",
+			"item": [
+				{
+					"name": "Create Document",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Payment Gateway Timeout Error\",\n  \"content\": \"We received multiple timeout errors from the payment gateway during peak hours. The issue occurred between 2:00 PM and 4:00 PM EST. Investigation revealed that the gateway was experiencing high latency.\",\n  \"tags\": [\"payments\", \"errors\", \"timeout\"],\n  \"metadata\": {\n    \"author\": \"alice@example.com\",\n    \"type\": \"incident_report\",\n    \"department\": \"payments\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/documents",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents"
+							]
+						},
+						"description": "Index a new document for the authenticated tenant. The document will be searchable immediately after indexing."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Document with ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"doc-custom-123\",\n  \"title\": \"API Documentation Guide\",\n  \"content\": \"This guide covers REST API best practices, authentication, and error handling. It includes examples for common use cases.\",\n  \"tags\": [\"documentation\", \"api\", \"guide\"],\n  \"metadata\": {\n    \"author\": \"bob@example.com\",\n    \"type\": \"technical_doc\",\n    \"department\": \"engineering\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/documents",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents"
+							]
+						},
+						"description": "Create a document with a custom ID. If ID is not provided, one will be generated automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Document",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/documents/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "doc-custom-123",
+									"description": "Document ID"
+								}
+							]
+						},
+						"description": "Retrieve a specific document by ID for the authenticated tenant. Results are cached for 60 seconds."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Document",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/documents/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "doc-custom-123",
+									"description": "Document ID"
+								}
+							]
+						},
+						"description": "Delete a document by ID for the authenticated tenant. Cache is automatically invalidated."
+					},
+					"response": []
+				}
+			],
+			"description": "Document management endpoints"
+		},
+		{
+			"name": "Search",
+			"item": [
+				{
+					"name": "Basic Search",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/search?q=payment",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "payment",
+									"description": "Search query string"
+								}
+							]
+						},
+						"description": "Perform a basic full-text search. Results are cached for 120 seconds."
+					},
+					"response": []
+				},
+				{
+					"name": "Search with Pagination",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/search?q=payment&offset=0&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "payment",
+									"description": "Search query string"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Pagination offset (default: 0)"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Number of results per page (default: 10, max: 50)"
+								}
+							]
+						},
+						"description": "Search with pagination parameters. Maximum limit is 50 results per page."
+					},
+					"response": []
+				},
+				{
+					"name": "Search with Tag Filter",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/search?q=error&tag=payments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "error",
+									"description": "Search query string"
+								},
+								{
+									"key": "tag",
+									"value": "payments",
+									"description": "Filter by tag (exact match)"
+								}
+							]
+						},
+						"description": "Search with tag filter. Only documents with the specified tag will be returned."
+					},
+					"response": []
+				},
+				{
+					"name": "Search with Author Filter",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/search?author=alice@example.com",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"search"
+							],
+							"query": [
+								{
+									"key": "author",
+									"value": "alice@example.com",
+									"description": "Filter by author (exact match)"
+								}
+							]
+						},
+						"description": "Search filtered by author without a search query. Can be combined with search query or used alone."
+					},
+					"response": []
+				},
+				{
+					"name": "Search with Date Range",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/search?from=2025-01-01T00:00:00Z&to=2025-01-31T23:59:59Z",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"search"
+							],
+							"query": [
+								{
+									"key": "from",
+									"value": "2025-01-01T00:00:00Z",
+									"description": "Filter by creation date from (ISO 8601)"
+								},
+								{
+									"key": "to",
+									"value": "2025-01-31T23:59:59Z",
+									"description": "Filter by creation date to (ISO 8601)"
+								}
+							]
+						},
+						"description": "Search filtered by date range without a search query. Dates should be in ISO 8601 format."
+					},
+					"response": []
+				},
+				{
+					"name": "Search with All Filters",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/search?q=payment&tag=payments&author=alice@example.com&from=2025-01-01T00:00:00Z&to=2025-01-31T23:59:59Z&offset=0&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "payment",
+									"description": "Search query string"
+								},
+								{
+									"key": "tag",
+									"value": "payments",
+									"description": "Filter by tag"
+								},
+								{
+									"key": "author",
+									"value": "alice@example.com",
+									"description": "Filter by author"
+								},
+								{
+									"key": "from",
+									"value": "2025-01-01T00:00:00Z",
+									"description": "Filter by creation date from"
+								},
+								{
+									"key": "to",
+									"value": "2025-01-31T23:59:59Z",
+									"description": "Filter by creation date to"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Pagination offset"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Number of results per page"
+								}
+							]
+						},
+						"description": "Search with all available filters and pagination. Demonstrates combining multiple filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Search All Documents",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"search"
+							]
+						},
+						"description": "Get all documents for the tenant without a search query. Useful for listing all documents."
+					},
+					"response": []
+				}
+			],
+			"description": "Search endpoints with various filters and pagination options"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "tenantId",
+			"value": "tenant-123",
+			"type": "string"
+		}
+	]
+}
+
