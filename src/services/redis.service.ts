@@ -1,28 +1,71 @@
-import Redis from 'ioredis';
+import Redis, { Cluster } from 'ioredis';
 import { config } from '../config';
 import logger from '../utils/logger';
 
 class RedisService {
-  private client: Redis;
+  private client: Redis | Cluster;
 
   constructor() {
-    this.client = new Redis({
+    // Determine if we should use cluster mode
+    // Auto-detect cluster mode if host contains cluster/serverless indicators, or use explicit config
+    const isClusterMode = config.redis.clusterMode || 
+      config.redis.host.includes('.cluster.') || 
+      config.redis.host.includes('.serverless.');
+
+    if (isClusterMode) {
+      // Cluster mode (for AWS ElastiCache cluster)
+      this.client = new Redis.Cluster(
+        [{ host: config.redis.host, port: config.redis.port }],
+        {
+          dnsLookup: (address, callback) => callback(null, address),
+          redisOptions: {
+            password: config.redis.password,
+            ...(config.redis.enableTLS && { tls: {} }),
+            maxRetriesPerRequest: 3,
+          },
+        }
+      );
+    } else {
+      // Standalone mode (for local Redis/Valkey or single-node ElastiCache)
+      this.client = new Redis({
+        host: config.redis.host,
+        port: config.redis.port,
+        password: config.redis.password,
+        retryStrategy: (times: number) => {
+          const delay = Math.min(times * 50, 2000);
+          return delay;
+        },
+        maxRetriesPerRequest: 3,
+        ...(config.redis.enableTLS && { tls: {} }),
+      });
+    }
+
+    // Log connection attempt details for debugging
+    logger.info('Attempting Redis connection', {
       host: config.redis.host,
       port: config.redis.port,
-      password: config.redis.password,
-      retryStrategy: (times) => {
-        const delay = Math.min(times * 50, 2000);
-        return delay;
-      },
-      maxRetriesPerRequest: 3,
+      mode: isClusterMode ? 'cluster' : 'standalone',
+      tlsEnabled: config.redis.enableTLS,
+      hasPassword: !!config.redis.password,
     });
 
     this.client.on('error', (err) => {
-      logger.error('Redis connection error', { error: err.message });
+      logger.error('Redis connection error', { 
+        error: err.message,
+        host: config.redis.host,
+        port: config.redis.port,
+        mode: isClusterMode ? 'cluster' : 'standalone',
+        tlsEnabled: config.redis.enableTLS,
+        stack: err.stack,
+      });
     });
 
     this.client.on('connect', () => {
-      logger.info('Redis connected', { host: config.redis.host, port: config.redis.port });
+      logger.info('Redis connected', { 
+        host: config.redis.host, 
+        port: config.redis.port,
+        mode: isClusterMode ? 'cluster' : 'standalone'
+      });
     });
   }
 
