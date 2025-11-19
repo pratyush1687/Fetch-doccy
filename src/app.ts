@@ -35,11 +35,21 @@ app.use('/health', healthRoutes);
 
 // Swagger API documentation (no auth required)
 // Path resolves to project root: dist/../swagger.yaml -> swagger.yaml
-const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Document Search API Documentation'
-}));
+try {
+  const swaggerPath = path.join(__dirname, '../swagger.yaml');
+  const swaggerDocument = YAML.load(swaggerPath);
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Document Search API Documentation'
+  }));
+  logger.info('Swagger documentation loaded', { path: swaggerPath });
+} catch (error) {
+  logger.warn('Failed to load Swagger documentation', { 
+    error: (error as Error).message,
+    path: path.join(__dirname, '../swagger.yaml')
+  });
+  // Continue without Swagger - API will still work
+}
 
 // Protected routes (require tenant ID)
 app.use('/documents', extractTenantId, rateLimiter, documentsRoutes);
