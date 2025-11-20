@@ -50,3 +50,19 @@ Through systematic experimentation, I determined that migrating to AWS Lambda wi
 
 ---
 
+## Brief Note on AI Tool Usage
+
+Throughout the development of this system, I leveraged AI tools as a collaborative partner to enhance productivity and decision-making. Specifically, I used different AI tools for different purposes:
+
+1. **Design Discussion Partner (GPT 5.1)**: As a thinking partner to bounce ideas off, explore possibilities, and reason through complex architectural decisions. GPT 5.1 helped me evaluate trade-offs, consider alternative approaches, and make more educated decisions by providing different perspectives and challenging assumptions.
+
+2. **Documentation Structuring (Cursor with Composer 1)**: Converting unstructured thoughts and ideas into well-organized, structured documents. This helped transform rough notes and conceptual thinking into clear, professional documentation that effectively communicates technical decisions and system designs.
+
+3. **Prototype Boilerplate (Cursor with Composer 1)**: Generating boilerplate code for prototypes, allowing me to quickly scaffold initial implementations and focus on core logic rather than repetitive setup code. This accelerated the prototyping phase significantly.
+
+4. **Test Suite and API Documentation (Cursor with Composer 1)**: Writing comprehensive test suites based on my expectations and requirements, as well as generating Swagger documentation and Postman collections for API prototypes. This ensured thorough test coverage and clear API documentation from the early stages of development.
+
+These AI-assisted workflows enhanced my productivity while maintaining full control over architectural decisions and code quality, allowing me to focus on high-value problem-solving and system design.
+
+---
+
