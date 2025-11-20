@@ -1,27 +1,55 @@
 import { redisService } from '../redis.service';
-import Redis from 'ioredis';
 
-jest.mock('ioredis');
+// Mock ioredis
+jest.mock('ioredis', () => {
+  const mockClientInstance = {
+    get: jest.fn(),
+    set: jest.fn(),
+    setex: jest.fn(),
+    del: jest.fn(),
+    keys: jest.fn(),
+    exists: jest.fn(),
+    ping: jest.fn(),
+    quit: jest.fn(),
+    on: jest.fn(),
+  };
+
+  const RedisConstructor = jest.fn(() => mockClientInstance);
+  (RedisConstructor as any).Cluster = jest.fn(() => mockClientInstance);
+  
+  return {
+    __esModule: true,
+    default: RedisConstructor,
+    Cluster: (RedisConstructor as any).Cluster,
+  };
+});
+
+// Mock config to ensure stable environment
+jest.mock('../../config', () => ({
+  config: {
+    redis: {
+      host: 'localhost',
+      port: 6379,
+      password: undefined,
+      clusterMode: false,
+      enableTLS: false,
+    },
+    logging: {
+      level: 'info',
+    },
+  },
+}));
 
 describe('RedisService', () => {
-  let mockRedisClient: jest.Mocked<Redis>;
+  // We'll reference the mock client instance from the service
+  let mockRedisClient: any;
+
+  beforeAll(() => {
+    mockRedisClient = (redisService as any).client;
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRedisClient = {
-      get: jest.fn(),
-      set: jest.fn(),
-      setex: jest.fn(),
-      del: jest.fn(),
-      keys: jest.fn(),
-      exists: jest.fn(),
-      ping: jest.fn(),
-      quit: jest.fn(),
-      on: jest.fn(),
-    } as any;
-
-    // Mock Redis constructor
-    (Redis as jest.MockedClass<typeof Redis>).mockImplementation(() => mockRedisClient);
   });
 
   describe('get', () => {
@@ -225,4 +253,3 @@ describe('RedisService', () => {
     });
   });
 });
-

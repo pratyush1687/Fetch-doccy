@@ -1,5 +1,3 @@
-import { opensearchService } from '../services/opensearch.service';
-
 jest.mock('../services/opensearch.service');
 jest.mock('../services/redis.service');
 jest.mock('../utils/logger');
@@ -62,51 +60,92 @@ jest.mock('yamljs', () => ({
   load: jest.fn(() => ({})),
 }));
 
+// Mock express before importing app
+const mockListen = jest.fn();
+const mockUse = jest.fn();
+const mockApp = {
+  listen: mockListen,
+  use: mockUse,
+  get: jest.fn(),
+  post: jest.fn(),
+  put: jest.fn(),
+  delete: jest.fn(),
+  patch: jest.fn(),
+};
+
+jest.mock('express', () => {
+  const expressFn: any = jest.fn(() => mockApp);
+  expressFn.json = jest.fn(() => jest.fn());
+  expressFn.urlencoded = jest.fn(() => jest.fn());
+  return expressFn;
+});
+
+jest.mock('cors', () => jest.fn(() => jest.fn()));
+
 describe('App', () => {
+  let mockServer: any;
+  let capturedCallback: (() => any) | undefined;
+
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.resetModules(); // Clear module cache to allow re-import
+    jest.resetModules();
     
-    // Reset the mock for initializeIndex
-    (opensearchService.initializeIndex as jest.Mock).mockResolvedValue(undefined);
+    // Reset captured callback
+    capturedCallback = undefined;
+    
+    // Mock will be set up in individual tests after re-importing
+    
+    // Setup mock server return value
+    mockServer = {
+      close: jest.fn((callback?: () => void) => {
+        if (callback) callback();
+      }),
+      on: jest.fn(),
+      once: jest.fn(),
+    };
+    
+    // Setup mockListen to capture callback
+    mockListen.mockImplementation((_port: number, callback?: () => void) => {
+      if (callback) {
+        capturedCallback = callback;
+      }
+      return mockServer;
+    });
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    // Clean up any open handles
+    if (mockServer && mockServer.close) {
+      mockServer.close();
+    }
+    capturedCallback = undefined;
   });
 
   it('should initialize OpenSearch index on startup', async () => {
-    (opensearchService.initializeIndex as jest.Mock).mockResolvedValue(undefined);
-
-    // Mock express app.listen before importing app
-    const express = require('express');
-    const originalListen = express.application.listen;
-    
-    let listenCallback: (() => void) | undefined;
-    express.application.listen = jest.fn(function(this: any, _port: number, callback?: () => void) {
-      listenCallback = callback;
-      return {
-        close: jest.fn(),
-        on: jest.fn(),
-        once: jest.fn(),
-      };
-    });
+    // Re-import opensearchService after resetModules to get the mocked version
+    const { opensearchService: mockOpensearchService } = await import('../services/opensearch.service');
+    (mockOpensearchService.initializeIndex as jest.Mock).mockResolvedValue(undefined);
 
     // Import app to trigger initialization
     await import('../app');
 
-    // Call the callback to trigger initialization
-    if (listenCallback) {
-      await listenCallback();
+    // Wait a bit for the module to fully load and listen to be called
+    await new Promise(resolve => setImmediate(resolve));
+
+    // Verify listen was called
+    expect(mockListen).toHaveBeenCalledWith(3000, expect.any(Function));
+    
+    // Call the captured callback to trigger initialization
+    expect(capturedCallback).toBeDefined();
+    if (capturedCallback) {
+      await capturedCallback();
     }
 
     // Wait for async initialization to complete
     await new Promise(resolve => setImmediate(resolve));
+    await new Promise(resolve => setImmediate(resolve));
 
-    expect(opensearchService.initializeIndex).toHaveBeenCalled();
-
-    // Restore original listen
-    express.application.listen = originalListen;
+    expect(mockOpensearchService.initializeIndex).toHaveBeenCalled();
   });
 
   it('should handle initialization errors', async () => {
@@ -117,43 +156,53 @@ describe('App', () => {
     // Clear module cache to allow fresh import
     jest.resetModules();
     
-    (opensearchService.initializeIndex as jest.Mock).mockRejectedValue(
+    // Reset captured callback for this test
+    capturedCallback = undefined;
+    
+    // Re-import opensearchService after resetModules to get the mocked version
+    const { opensearchService: mockOpensearchService } = await import('../services/opensearch.service');
+    (mockOpensearchService.initializeIndex as jest.Mock).mockRejectedValue(
       new Error('Initialization failed')
     );
 
-    // Mock express app.listen before importing app
-    const express = require('express');
-    const originalListen = express.application.listen;
-    
-    let listenCallback: (() => void) | undefined;
-    express.application.listen = jest.fn(function(this: any, _port: number, callback?: () => void) {
-      listenCallback = callback;
-      return {
-        close: jest.fn(),
-        on: jest.fn(),
-        once: jest.fn(),
-      };
+    // Setup mockListen again after resetModules
+    mockListen.mockImplementation((_port: number, callback?: () => void) => {
+      if (callback) {
+        capturedCallback = callback;
+      }
+      return mockServer;
     });
 
     // Import app - initialization should fail and call process.exit
     await import('../app');
 
-    // Call the callback to trigger initialization
-    if (listenCallback) {
-      await listenCallback();
+    // Wait a bit for the module to fully load and listen to be called
+    await new Promise(resolve => setImmediate(resolve));
+
+    // Verify listen was called
+    expect(mockListen).toHaveBeenCalledWith(3000, expect.any(Function));
+    
+    // Call the captured callback to trigger initialization
+    expect(capturedCallback).toBeDefined();
+    if (capturedCallback) {
+      try {
+        await (capturedCallback as () => Promise<void>)();
+      } catch (error) {
+        // Expected to throw or call process.exit
+      }
     }
 
-    // Wait for async operations
+    // Wait for async operations to complete
+    await new Promise(resolve => setImmediate(resolve));
     await new Promise(resolve => setImmediate(resolve));
 
     // Verify that initializeIndex was called
-    expect(opensearchService.initializeIndex).toHaveBeenCalled();
+    expect(mockOpensearchService.initializeIndex).toHaveBeenCalled();
     
     // Note: process.exit is called but we can't easily test it without affecting the test runner
     // The important thing is that the error is handled
 
-    // Restore original listen and exit
-    express.application.listen = originalListen;
+    // Restore original exit
     process.exit = originalExit;
   });
 });

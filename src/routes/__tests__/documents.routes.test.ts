@@ -3,9 +3,17 @@ import express, { Request, Response, NextFunction } from 'express';
 import documentsRoutes from '../documents.routes';
 import { opensearchService } from '../../services/opensearch.service';
 import { cacheService } from '../../services/cache.service';
+import { errorHandler } from '../../middleware/errorHandler';
 
 jest.mock('../../services/opensearch.service');
+jest.mock('../../services/redis.service');
 jest.mock('../../services/cache.service');
+jest.mock('../../utils/logger', () => ({
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+}));
 
 // Mock middleware to set tenant context
 const mockTenantMiddleware = (req: Request,_res: Response, next: NextFunction) => {
@@ -19,6 +27,7 @@ const mockTenantMiddleware = (req: Request,_res: Response, next: NextFunction) =
 const app = express();
 app.use(express.json());
 app.use('/documents', mockTenantMiddleware, documentsRoutes);
+app.use(errorHandler);
 
 describe('Documents Routes', () => {
   beforeEach(() => {
@@ -124,6 +133,7 @@ describe('Documents Routes', () => {
         .send(document);
 
       expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
     });
 
     it('should reject document with content too long', async () => {
@@ -139,6 +149,7 @@ describe('Documents Routes', () => {
         .send(document);
 
       expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
     });
 
     it('should handle indexing errors', async () => {
@@ -158,6 +169,7 @@ describe('Documents Routes', () => {
         .send(document);
 
       expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty('error');
     });
   });
 
@@ -236,6 +248,7 @@ describe('Documents Routes', () => {
         .set('X-Tenant-Id', tenantId);
 
       expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty('error');
     });
   });
 
@@ -290,6 +303,7 @@ describe('Documents Routes', () => {
         .set('X-Tenant-Id', tenantId);
 
       expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty('error');
     });
   });
 });

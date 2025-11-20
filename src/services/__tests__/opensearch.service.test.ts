@@ -1,8 +1,75 @@
 import { opensearchService } from '../opensearch.service';
-import { Client } from '@opensearch-project/opensearch';
 import { Document, SearchQuery } from '../../types';
 
-jest.mock('@opensearch-project/opensearch');
+// Mock config before importing the service
+jest.mock('../../config', () => ({
+  config: {
+    opensearch: {
+      node: 'http://localhost:9200',
+      index: 'test-documents',
+      username: 'admin',
+      password: 'admin',
+    },
+    logging: {
+      level: 'info',
+    },
+  },
+}));
+
+// Mock logger
+jest.mock('../../utils/logger', () => ({
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+}));
+
+// Mock OpenSearch Client - define mocks inside factory
+jest.mock('@opensearch-project/opensearch', () => {
+  const mockIndicesExists = jest.fn();
+  const mockIndicesCreate = jest.fn();
+  const mockIndex = jest.fn();
+  const mockGet = jest.fn();
+  const mockDelete = jest.fn();
+  const mockSearch = jest.fn();
+  const mockClusterHealth = jest.fn();
+
+  const mockClient = {
+    indices: {
+      exists: mockIndicesExists,
+      create: mockIndicesCreate,
+    },
+    index: mockIndex,
+    get: mockGet,
+    delete: mockDelete,
+    search: mockSearch,
+    cluster: {
+      health: mockClusterHealth,
+    },
+  };
+
+  const ClientConstructor = jest.fn(() => mockClient);
+
+  // Store mocks on the constructor for access in tests
+  (ClientConstructor as any).__mocks = {
+    indicesExists: mockIndicesExists,
+    indicesCreate: mockIndicesCreate,
+    index: mockIndex,
+    get: mockGet,
+    delete: mockDelete,
+    search: mockSearch,
+    clusterHealth: mockClusterHealth,
+  };
+
+  return {
+    __esModule: true,
+    Client: ClientConstructor,
+  };
+});
+
+// Get access to the mocked Client to retrieve mock functions
+const MockedClient = require('@opensearch-project/opensearch').Client;
+const mocks = (MockedClient as any).__mocks;
 
 describe('OpenSearchService', () => {
   let mockIndicesExists: jest.Mock;
@@ -12,35 +79,18 @@ describe('OpenSearchService', () => {
   let mockDelete: jest.Mock;
   let mockSearch: jest.Mock;
   let mockClusterHealth: jest.Mock;
-  let mockClient: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Create individual mock functions
-    mockIndicesExists = jest.fn();
-    mockIndicesCreate = jest.fn();
-    mockIndex = jest.fn();
-    mockGet = jest.fn();
-    mockDelete = jest.fn();
-    mockSearch = jest.fn();
-    mockClusterHealth = jest.fn();
-    
-    mockClient = {
-      indices: {
-        exists: mockIndicesExists,
-        create: mockIndicesCreate,
-      },
-      index: mockIndex,
-      get: mockGet,
-      delete: mockDelete,
-      search: mockSearch,
-      cluster: {
-        health: mockClusterHealth,
-      },
-    };
-
-    (Client as jest.MockedClass<typeof Client>).mockImplementation(() => mockClient);
+    // Get references to the mock functions
+    mockIndicesExists = mocks.indicesExists;
+    mockIndicesCreate = mocks.indicesCreate;
+    mockIndex = mocks.index;
+    mockGet = mocks.get;
+    mockDelete = mocks.delete;
+    mockSearch = mocks.search;
+    mockClusterHealth = mocks.clusterHealth;
   });
 
   describe('initializeIndex', () => {
@@ -506,4 +556,3 @@ describe('OpenSearchService', () => {
     });
   });
 });
-

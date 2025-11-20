@@ -4,11 +4,27 @@ import { config } from '../../config';
 import { SearchResponse, Document } from '../../types';
 
 jest.mock('../redis.service');
+jest.mock('../../utils/logger', () => ({
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+}));
 jest.mock('../../config', () => ({
   config: {
     cache: {
       ttlSeconds: 60,
       searchTtlSeconds: 120,
+    },
+    redis: {
+      host: 'localhost',
+      port: 6379,
+      password: undefined,
+      clusterMode: false,
+      enableTLS: false,
+    },
+    logging: {
+      level: 'info',
     },
   },
 }));
