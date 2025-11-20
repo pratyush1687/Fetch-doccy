@@ -3,6 +3,7 @@ import { config } from '../config';
 import { hashQuery } from '../utils/hash';
 import { SearchResponse, Document } from '../types';
 import logger from '../utils/logger';
+import { metricsService } from './metrics.service';
 
 class CacheService {
   private getSearchKey(tenantId: string, query: string, filters: Record<string, any>, offset: number, limit: number): string {
@@ -25,6 +26,9 @@ class CacheService {
     const cached = await redisService.get<SearchResponse>(key);
     if (cached) {
       logger.debug('Cache hit for search', { tenantId, query });
+      metricsService.recordCacheHit('search');
+    } else {
+      metricsService.recordCacheMiss('search');
     }
     return cached;
   }
@@ -47,6 +51,9 @@ class CacheService {
     const cached = await redisService.get<Document>(key);
     if (cached) {
       logger.debug('Cache hit for document', { tenantId, docId });
+      metricsService.recordCacheHit('document');
+    } else {
+      metricsService.recordCacheMiss('document');
     }
     return cached;
   }

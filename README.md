@@ -381,13 +381,38 @@ Structured JSON logs with:
 - Tenant ID (when available)
 - Request context
 
-### Metrics (Production)
+### Metrics
 
-- Request rate per endpoint
-- Latency percentiles (P50, P95, P99)
-- Error rate
-- Cache hit ratio
-- Rate limit violations
+**Built with prom-client** - Industry-standard Prometheus metrics library
+
+**Endpoints:**
+- `GET /metrics` - Prometheus format (for scraping by Prometheus/Grafana)
+- `GET /metrics/json` - JSON format (human-readable)
+- `GET /metrics/summary` - Quick summary
+
+**Metrics Collected:**
+- **HTTP Metrics**: Request duration (histogram), total requests, errors by status code
+- **Cache Metrics**: Hits/misses by cache type (search/document)
+- **Rate Limit Metrics**: Violations by tenant
+- **System Metrics**: CPU, memory, event loop lag (via prom-client defaults)
+- **Uptime**: Process uptime in seconds
+
+**Example Usage:**
+```bash
+# Prometheus format (for scraping)
+curl http://localhost:3000/metrics
+
+# JSON format (easier to read)
+curl http://localhost:3000/metrics/json
+```
+
+**Integration with Prometheus:**
+The `/metrics` endpoint returns standard Prometheus format. You can:
+1. Run Prometheus locally and configure it to scrape `http://localhost:3000/metrics`
+2. Visualize metrics in Grafana
+3. Set up alerts based on metrics
+
+See [Metrics Documentation](docs/METRICS.md) for detailed setup instructions.
 
 ## Troubleshooting
 
