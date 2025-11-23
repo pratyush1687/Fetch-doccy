@@ -418,6 +418,68 @@
 				}
 			],
 			"description": "Search endpoints with various filters and pagination options"
+		},
+		{
+			"name": "Metrics",
+			"item": [
+				{
+					"name": "Metrics (Prometheus format)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/metrics",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"metrics"
+							]
+						},
+						"description": "Returns metrics in Prometheus text format, suitable for scraping by Prometheus."
+					},
+					"response": []
+				},
+				{
+					"name": "Metrics JSON",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/metrics/json",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"metrics",
+								"json"
+							]
+						},
+						"description": "Returns metrics summary in JSON format for easier human inspection."
+					},
+					"response": []
+				},
+				{
+					"name": "Metrics Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/metrics/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"metrics",
+								"summary"
+							]
+						},
+						"description": "Returns a quick summary of key metrics (backwards compatibility endpoint)."
+					},
+					"response": []
+				}
+			],
+			"description": "Metrics and observability endpoints"
 		}
 	],
 	"event": [
